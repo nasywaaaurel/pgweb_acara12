@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
+    <title>Web-GIS dengan GeoServer dan Leaflet</title>
+
+    <style>
+        /* Tema Warna */
+        :root {
+            --primary-color: #D91656;
+            --secondary-color: #EE66A6;
+            --text-color: #ffffff;
+            --background-color: #e0f7fa;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: var(--background-color);
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            text-align: center;
+            padding: 15px 0;
+            font-size: 2em;
+            font-weight: bold;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #map {
+            width: 100%;
+            height: 85vh;
+            margin: 0 auto;
+            border: 5px solid var(--secondary-color);
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        footer {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            text-align: center;
+            padding: 10px 0;
+            font-size: 0.9em;
+        }
+
+        .leaflet-control-layers {
+            background-color: var(--primary-color) !important;
+            color: var(--text-color) !important;
+            border-radius: 5px;
+        }
+
+        .leaflet-control-layers label {
+            color: var(--text-color) !important;
+        }
+
+        /* Legenda */
+        #legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            font-size: 14px;
+        }
+
+        #legend h3 {
+            margin: 0 0 10px;
+        }
+
+        #legend ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #legend li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        #legend li span {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header>
+        WEBSITE PETA INTERAKTIF KABUPATEN SLEMAN
+    </header>
+
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Legenda -->
+    <div id="legend">
+        <h3>Legenda Kecamatan</h3>
+        <ul>
+            <li><span style="background-color: #ff0000;"></span> Berbah</li>
+            <li><span style="background-color: #ff9900;"></span> Cangkringan</li>
+            <li><span style="background-color: #00ff00;"></span> Depok</li>
+            <li><span style="background-color: #00ccff;"></span> Gamping</li>
+            <li><span style="background-color: #0000ff;"></span> Godean</li>
+            <li><span style="background-color: #9900cc;"></span> Kalasan</li>
+            <li><span style="background-color: #ffcc00;"></span> Minggir</li>
+            <li><span style="background-color: #ff66ff;"></span> Mlati</li>
+            <li><span style="background-color: #66ff33;"></span> Moyudan</li>
+            <li><span style="background-color: #3399ff;"></span> Ngaglik</li>
+            <li><span style="background-color: #6600cc;"></span> Ngemplak</li>
+            <li><span style="background-color: #ff6600;"></span> Pakem</li>
+            <li><span style="background-color: #ff0066;"></span> Prambanan</li>
+            <li><span style="background-color: #6699ff;"></span> Seyegan</li>
+            <li><span style="background-color: #ff33cc;"></span> Sleman</li>
+            <li><span style="background-color: #ccff33;"></span> Tempel</li>
+            <li><span style="background-color: #99ffcc;"></span> Turi</li>
+        </ul>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        © 2024 Kabupaten Sleman | Dibuat dengan ❤ menggunakan GeoServer dan Leaflet
+    </footer>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <script>
+        // Inisialisasi peta
+        var map = L.map("map").setView([-7.695810715261637, 110.39224064239238], 11);
+
+        // Peta dasar
+        var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(map);
+
+        // Lapisan WMS untuk batas administrasi desa
+        var batasAdmin = L.tileLayer.wms("http://localhost:8080/geoserver/acara12/wms", {
+            layers: "acara12:sleman",
+            transparent: true,
+            format: "image/png",
+        }).addTo(map);
+
+        // Lapisan WMS untuk jalan
+        var jalan = L.tileLayer.wms("http://localhost:8080/geoserver/PGWEB12/wms", {
+            layers: "PGWEB12:jalansleman",
+            transparent: true,
+            format: "image/png",
+        }).addTo(map);
+
+        // Kontrol lapisan
+        var overlayLayers = {
+            "Batas Administrasi Desa": batasAdmin,
+            "Jalan": jalan,
+        };
+
+        L.control.layers(null, overlayLayers, { collapsed: false }).addTo(map);
+    </script>
+</body>
+
+</html>
